@@ -10,7 +10,7 @@ import stylisticJs from '@stylistic/eslint-plugin-js'
 export default [
   js.configs.recommended,
   importPlugin.flatConfigs.recommended,
-  { ignores: ['node_modules', 'dist', 'build'] },
+  { ignores: ['node_modules', 'dist', 'build', '**/*.config.js'] },
   {
     files: ['**/*.{js,jsx,mjs,cjs}'],
     languageOptions: {
