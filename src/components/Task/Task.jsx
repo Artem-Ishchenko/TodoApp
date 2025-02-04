@@ -31,6 +31,7 @@ export default class Task extends Component {
       this.setState({ label: this.state.initialLabel });
     } else if (e.key === 'Enter') {
       this.props.onSubmitCreate(this.props.id, this.state.label);
+      this.setState({ initialLabel: this.state.label });
     }
   };
 
