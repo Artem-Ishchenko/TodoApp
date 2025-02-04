@@ -21,7 +21,7 @@ export default class TaskList extends Component {
   };
 
   render() {
-    const { todoData, onDeleted, onToggleDone, onEdit, onSubmitCreate } = this.props;
+    const { todoData, onDeleted, onToggleDone, onEdit, onSubmitCreate, resumeTimer, stopTimer } = this.props;
     const elements = todoData.map((item) => {
       const { ...itemProps } = item;
       return (
@@ -31,6 +31,8 @@ export default class TaskList extends Component {
           onDeleted={() => onDeleted(item.id)}
           onToggleDone={() => onToggleDone(item.id)}
           onEdit={() => onEdit(item.id)}
+          onStopTimer={() => stopTimer(item.id)}
+          onResumeTimer={() => resumeTimer(item.id)}
           onSubmitCreate={onSubmitCreate}
         />
       );

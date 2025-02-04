@@ -9,45 +9,81 @@ import Footer from '../Footer';
 export default class TodoApp extends Component {
   maxId = 100;
 
+  timers = {};
+
   state = {
     todoData: [
-      this.createTodoItem('Drink Coffee'),
-      this.createTodoItem('Make Awesome App'),
-      this.createTodoItem('Have a lunch'),
+      this.createTodoItem('Drink Coffee', 0, 0),
+      this.createTodoItem('Go to job', 0, 0),
+      this.createTodoItem('Have a lunch', 0, 0),
     ],
     filter: 'all',
   };
 
+  componentWillUnmount() {
+    Object.values(this.timers).forEach((timer) => clearInterval(timer));
+  }
+
   deleteItem = (id) => {
-    this.setState(({ todoData }) => {
-      const idx = todoData.findIndex((el) => el.id === id);
-
-      const newArray = [...todoData.slice(0, idx), ...todoData.slice(idx + 1)];
-      return {
-        todoData: newArray,
-      };
-    });
+    clearInterval(this.timers[id]);
+    this.setState(({ todoData }) => ({
+      todoData: todoData.filter((el) => el.id !== id),
+    }));
   };
 
-  addItem = (text) => {
-    const newItem = this.createTodoItem(text);
-    this.setState(({ todoData }) => {
-      const newArr = [...todoData, newItem];
-
-      return {
-        todoData: newArr,
-      };
-    });
+  addItem = (text, min, sec) => {
+    const newItem = this.createTodoItem(text, min, sec);
+    this.setState(
+      ({ todoData }) => ({ todoData: [...todoData, newItem] }),
+      () => {
+        if (newItem.timeLeft > 0) this.startTimer(newItem.id);
+      }
+    );
   };
 
-  createTodoItem(text) {
+  startTimer = (id) => {
+    if (this.timers[id]) return;
+
+    this.timers[id] = setInterval(() => {
+      this.setState(({ todoData }) => ({
+        todoData: todoData.map((task) => {
+          if (task.id === id) {
+            if (task.timeLeft > 0) {
+              return { ...task, timeLeft: task.timeLeft - 1 };
+            } else {
+              clearInterval(this.timers[id]);
+              delete this.timers[id];
+              return { ...task, completed: true, timeLeft: 0 };
+            }
+          }
+          return task;
+        }),
+      }));
+    }, 1000);
+  };
+
+  stopTimer = (id) => {
+    clearInterval(this.timers[id]);
+    delete this.timers[id];
+  };
+
+  onFilterChange = (filter) => this.setState({ filter });
+
+  resumeTimer = (id) => {
+    if (!this.timers[id]) {
+      this.startTimer(id);
+    }
+  };
+
+  createTodoItem(text, min, sec) {
     let timeCreate = new Date().getTime();
     return {
-      text: text,
+      text,
       id: this.maxId++,
       completed: false,
       edit: false,
       time: timeCreate,
+      timeLeft: min * 60 + sec,
     };
   }
 
@@ -64,16 +100,13 @@ export default class TodoApp extends Component {
     }
   }
 
-  onFilterChange = (filter) => {
-    this.setState({ filter });
-  };
-
   onToggleDone = (id) => {
-    this.setState(({ todoData }) => {
-      return {
-        todoData: this.toggleProperty(todoData, id, 'completed'),
-      };
-    });
+    this.setState(({ todoData }) => ({
+      todoData: this.toggleProperty(todoData, id, 'completed').map((task) =>
+        task.id === id && task.completed ? { ...task, timeLeft: 0 } : task
+      ),
+    }));
+    this.stopTimer(id);
   };
 
   onEdit = (id) => {
@@ -81,8 +114,9 @@ export default class TodoApp extends Component {
     const idx = arr.findIndex((el) => el.id === id);
     if (!arr[idx].completed) {
       this.setState(({ todoData }) => {
+        const newTodoData = this.toggleProperty(todoData, id, 'edit');
         return {
-          todoData: this.toggleProperty(todoData, id, 'edit'),
+          todoData: newTodoData,
         };
       });
     }
@@ -133,6 +167,8 @@ export default class TodoApp extends Component {
             onToggleDone={this.onToggleDone}
             onEdit={this.onEdit}
             onSubmitCreate={this.onSubmitCreate}
+            stopTimer={this.stopTimer}
+            resumeTimer={this.resumeTimer}
           />
           <Footer
             filter={filter}
